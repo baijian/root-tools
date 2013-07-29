@@ -45,6 +45,10 @@ public class GithubCodeTreeFragment extends BaseFragment implements
 	HashMap<String, String> parentSha;
 	PathView tvPath;
 
+	public GithubCodeTreeFragment() {
+		super();
+	}
+
 	public GithubCodeTreeFragment(int repoType) {
 		super();
 		this.repoType = repoType;
