@@ -5,9 +5,7 @@ Weibo
 	
 provider :google_oauth2, '876356697116.apps.googleusercontent.com', 'Sc9hk9vgfb5nQCYCSG1niCoM', {}
 
-
 2. about
-3. upload images
 4. 数据统计
 
 create table sbbs_log(

@@ -17,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
+import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.TextView;
 
@@ -26,6 +27,7 @@ import com.rarnu.devlib.component.intf.OnPullDownListener;
 import com.rarnu.utils.ResourceUtils;
 import com.rarnu.utils.UIUtils;
 import com.sbbs.me.android.ArticleActivity;
+import com.sbbs.me.android.GalleryActivity;
 import com.sbbs.me.android.Global;
 import com.sbbs.me.android.R;
 import com.sbbs.me.android.UserDetailActivity;
@@ -59,9 +61,14 @@ public class MainFragment extends BaseFragment implements
 	TextView tvNodata;
 
 	MenuItem miUser;
+	MenuItem miGallery;
 	SinaOAuth sinaOAuth;
 	GoogleOAuth googleOAuth;
 	GithubOAuth githubOAuth;
+
+	int page = 1;
+	private static final int PAGE_SIZE = 20;
+	boolean isBottom = false;
 
 	public MainFragment() {
 		super();
@@ -95,12 +102,10 @@ public class MainFragment extends BaseFragment implements
 		lvPullDown.getListView().setAdapter(adapter);
 		loader = new SbbsBlockLoader(getActivity());
 		lvPullDown.enableAutoFetchMore(true, 1);
-		lvPullDown.setOnPullDownListener(this);
 
 		int devide = UIUtils.dipToPx(8);
 		lvPullDown.getListView().setDivider(null);
 		lvPullDown.getListView().setDividerHeight(devide);
-
 		lvPullDown.getListView().setPadding(devide, devide, devide, devide);
 		lvPullDown.getListView().setSelector(R.color.transparent);
 		lvPullDown.getListView().setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -112,6 +117,7 @@ public class MainFragment extends BaseFragment implements
 
 	@Override
 	public void initEvents() {
+		lvPullDown.setOnPullDownListener(this);
 		lvPullDown.getListView().setOnItemClickListener(this);
 		tvNodata.setOnClickListener(this);
 		loader.registerListener(0, this);
@@ -120,10 +126,23 @@ public class MainFragment extends BaseFragment implements
 	@Override
 	public void initLogic() {
 
+		page = 1;
+		isBottom = false;
 		if (Global.listArticle.size() == 0 || Global.autoRefreshTag) {
 			Global.autoRefreshTag = false;
 			tvLoading.setVisibility(View.VISIBLE);
+			loader.setPage(page, PAGE_SIZE);
 			loader.startLoading();
+		} else {
+			// keep the last PAGE_SIZE articles
+			if (Global.listArticle.size() > PAGE_SIZE) {
+				List<SbbsMeBlock> tmp = new ArrayList<SbbsMeBlock>();
+				for (int i = 0; i < PAGE_SIZE; i++) {
+					tmp.add(Global.listArticle.get(i));
+				}
+				Global.listArticle.clear();
+				Global.listArticle.addAll(tmp);
+			}
 		}
 		lvPullDown.notifyDidLoad();
 		if (!SbbsMeAPI.isLogin()) {
@@ -145,7 +164,11 @@ public class MainFragment extends BaseFragment implements
 	public void initMenu(Menu menu) {
 		miUser = menu.add(0, MenuIds.MENU_ID_USER, 99, R.string.login);
 		miUser.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-		miUser.setIcon(android.R.drawable.ic_menu_report_image);
+		miUser.setIcon(android.R.drawable.ic_menu_myplaces);
+		miGallery = menu.add(0, MenuIds.MENU_ID_GALLERY, 98, R.string.gallery);
+		miGallery.setIcon(android.R.drawable.ic_menu_gallery);
+		miGallery.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+
 		if (SbbsMeAPI.isLogin()) {
 			Message msg = new Message();
 			msg.what = 1;
@@ -212,6 +235,15 @@ public class MainFragment extends BaseFragment implements
 						UserDetailActivity.class).putExtra("user", userId), 1);
 			}
 			break;
+		case MenuIds.MENU_ID_GALLERY:
+			if (SbbsMeAPI.isLogin()) {
+				startActivity(new Intent(getActivity(), GalleryActivity.class)
+						.putExtra("select_mode", false));
+			} else {
+				Toast.makeText(getActivity(), R.string.not_login,
+						Toast.LENGTH_LONG).show();
+			}
+			break;
 		}
 		return true;
 	}
@@ -228,43 +260,35 @@ public class MainFragment extends BaseFragment implements
 
 	@Override
 	public void onRefresh() {
+		page = 1;
+		isBottom = false;
+		loader.setPage(page, PAGE_SIZE);
 		loader.startLoading();
 	}
 
 	@Override
 	public void onMore() {
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(500);
-				} catch (Exception e) {
-
-				}
-				hDid.sendEmptyMessage(1);
-			}
-		}).start();
-
+		if (!isBottom) {
+			page++;
+			loader.setPage(page, PAGE_SIZE);
+			loader.startLoading();
+		} else {
+			lvPullDown.notifyDidMore();
+		}
 	}
-
-	private Handler hDid = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			if (msg.what == 1) {
-				lvPullDown.notifyDidMore();
-			}
-			super.handleMessage(msg);
-		};
-	};
 
 	@Override
 	public void onLoadComplete(Loader<List<SbbsMeBlock>> loader,
 			List<SbbsMeBlock> data) {
-		Global.listArticle.clear();
-		if (data != null) {
-			Global.listArticle.addAll(data);
+		if (page == 1) {
+			Global.listArticle.clear();
 		}
+		if (data != null && data.size() != 0) {
+			Global.listArticle.addAll(data);
+		} else {
+			isBottom = true;
+		}
+
 		if (getActivity() != null) {
 			tvNodata.setEnabled(true);
 			tvNodata.setVisibility(Global.listArticle.size() == 0 ? View.VISIBLE
@@ -272,6 +296,7 @@ public class MainFragment extends BaseFragment implements
 			adapter.setNewList(Global.listArticle);
 			tvLoading.setVisibility(View.GONE);
 			lvPullDown.notifyDidRefresh();
+			lvPullDown.notifyDidMore();
 		}
 	}
 
@@ -296,7 +321,6 @@ public class MainFragment extends BaseFragment implements
 			int type = data.getIntExtra("type", 0);
 			switch (type) {
 			case 0:
-				// google
 				googleOAuth.sendGoogleOauth();
 				break;
 			case 1:
@@ -352,13 +376,14 @@ public class MainFragment extends BaseFragment implements
 			Message msg = new Message();
 			msg.what = 1;
 			msg.obj = d;
-			hSetHead.sendMessage(msg);
+
 			try {
 				SbbsMeAPI.login(String.valueOf(user.id), user.screen_name,
 						"weibo", user.avatar_large);
 			} catch (Exception e) {
 				Log.e("onGetSinaUser", e.getMessage());
 			}
+			hSetHead.sendMessage(msg);
 		}
 	}
 
@@ -369,12 +394,13 @@ public class MainFragment extends BaseFragment implements
 			Message msg = new Message();
 			msg.what = 1;
 			msg.obj = d;
-			hSetHead.sendMessage(msg);
+
 			try {
 				SbbsMeAPI.login(user.id, user.name, "google", user.picture);
 			} catch (Exception e) {
 				Log.e("onGetGoogleUser", e.getMessage());
 			}
+			hSetHead.sendMessage(msg);
 		}
 	}
 
@@ -385,13 +411,14 @@ public class MainFragment extends BaseFragment implements
 			Message msg = new Message();
 			msg.what = 1;
 			msg.obj = d;
-			hSetHead.sendMessage(msg);
+
 			try {
 				SbbsMeAPI.login(String.valueOf(user.id), user.name, "github",
 						user.avatarUrl);
 			} catch (Exception e) {
 				Log.e("onGetGithubUser", e.getMessage());
 			}
+			hSetHead.sendMessage(msg);
 		}
 	}
 
