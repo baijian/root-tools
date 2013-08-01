@@ -36,6 +36,7 @@ import com.sbbs.me.android.api.SbbsMeAPI;
 import com.sbbs.me.android.api.SbbsMeBlock;
 import com.sbbs.me.android.api.SbbsMeGithubUser;
 import com.sbbs.me.android.api.SbbsMeGoogleUser;
+import com.sbbs.me.android.api.SbbsMeLogs;
 import com.sbbs.me.android.api.SbbsMeSinaUser;
 import com.sbbs.me.android.consts.MenuIds;
 import com.sbbs.me.android.dialog.SelectLoginDialog;
@@ -131,6 +132,7 @@ public class MainFragment extends BaseFragment implements
 		if (Global.listArticle.size() == 0 || Global.autoRefreshTag) {
 			Global.autoRefreshTag = false;
 			tvLoading.setVisibility(View.VISIBLE);
+			loader.setRefresh(false);
 			loader.setPage(page, PAGE_SIZE);
 			loader.startLoading();
 		} else {
@@ -148,6 +150,8 @@ public class MainFragment extends BaseFragment implements
 		if (!SbbsMeAPI.isLogin()) {
 			loadUserInfo();
 		}
+
+		SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_HOME, "");
 	}
 
 	@Override
@@ -262,6 +266,7 @@ public class MainFragment extends BaseFragment implements
 	public void onRefresh() {
 		page = 1;
 		isBottom = false;
+		loader.setRefresh(true);
 		loader.setPage(page, PAGE_SIZE);
 		loader.startLoading();
 	}
@@ -270,6 +275,7 @@ public class MainFragment extends BaseFragment implements
 	public void onMore() {
 		if (!isBottom) {
 			page++;
+			loader.setRefresh(true);
 			loader.setPage(page, PAGE_SIZE);
 			loader.startLoading();
 		} else {
@@ -290,13 +296,19 @@ public class MainFragment extends BaseFragment implements
 		}
 
 		if (getActivity() != null) {
-			tvNodata.setEnabled(true);
-			tvNodata.setVisibility(Global.listArticle.size() == 0 ? View.VISIBLE
-					: View.GONE);
 			adapter.setNewList(Global.listArticle);
-			tvLoading.setVisibility(View.GONE);
 			lvPullDown.notifyDidRefresh();
 			lvPullDown.notifyDidMore();
+
+			if (!((SbbsBlockLoader) loader).isRefresh()) {
+				((SbbsBlockLoader) loader).setRefresh(true);
+				loader.startLoading();
+			} else {
+				tvNodata.setEnabled(true);
+				tvNodata.setVisibility(Global.listArticle.size() == 0 ? View.VISIBLE
+						: View.GONE);
+				tvLoading.setVisibility(View.GONE);
+			}
 		}
 	}
 
@@ -340,6 +352,7 @@ public class MainFragment extends BaseFragment implements
 				Config.setSinaUserId(getActivity(), "");
 				Config.setUserId(getActivity(), "");
 				miUser.setIcon(android.R.drawable.ic_menu_report_image);
+				SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_LOGOUT, "");
 			}
 		}
 			break;
@@ -347,6 +360,9 @@ public class MainFragment extends BaseFragment implements
 			if (Global.autoRefreshTag) {
 				Global.autoRefreshTag = false;
 				tvLoading.setVisibility(View.VISIBLE);
+				loader.setRefresh(true);
+				page = 1;
+				loader.setPage(page, PAGE_SIZE);
 				loader.startLoading();
 			}
 		}
@@ -364,6 +380,7 @@ public class MainFragment extends BaseFragment implements
 						miUser.setIcon(d);
 					}
 				}
+				SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_LOGIN, "");
 			}
 			super.handleMessage(msg);
 		}
@@ -428,6 +445,9 @@ public class MainFragment extends BaseFragment implements
 		case R.id.tvNodata:
 			tvNodata.setEnabled(false);
 			tvLoading.setVisibility(View.VISIBLE);
+			loader.setRefresh(true);
+			page = 1;
+			loader.setPage(page, PAGE_SIZE);
 			loader.startLoading();
 			break;
 		}

@@ -33,6 +33,7 @@ import com.sbbs.me.android.R;
 import com.sbbs.me.android.adapter.SbbsMeGalleryAdapter;
 import com.sbbs.me.android.api.SbbsMeAPI;
 import com.sbbs.me.android.api.SbbsMeImage;
+import com.sbbs.me.android.api.SbbsMeLogs;
 import com.sbbs.me.android.consts.MenuIds;
 import com.sbbs.me.android.consts.PathDefine;
 import com.sbbs.me.android.dialog.ConfirmDialog;
@@ -51,6 +52,7 @@ public class GalleryFragment extends BaseFragment implements
 	SbbsGalleryLoader loader;
 	List<SbbsMeImage> listImage = null;
 	TextView tvLoading;
+	TextView tvNodata;
 
 	String photoFileName = "";
 	File fTmp, fPhotoTmp = null;
@@ -60,13 +62,6 @@ public class GalleryFragment extends BaseFragment implements
 	public GalleryFragment() {
 		super();
 		tagText = ResourceUtils.getString(R.tag.tag_gallery_fragment);
-	}
-
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		fTmp = new File(PathDefine.ROOT_PATH + "tmp.jpg");
-		fPhotoTmp = new File(PathDefine.ROOT_PATH + "tmp_p.jpg");
 	}
 
 	@Override
@@ -86,8 +81,13 @@ public class GalleryFragment extends BaseFragment implements
 
 	@Override
 	public void initComponents() {
+		fTmp = new File(PathDefine.ROOT_PATH + "tmp.jpg");
+		fPhotoTmp = new File(PathDefine.ROOT_PATH + "tmp_p.jpg");
+
 		gvImages = (GridView) innerView.findViewById(R.id.gvImages);
 		tvLoading = (TextView) innerView.findViewById(R.id.tvLoading);
+		tvNodata = (TextView) innerView.findViewById(R.id.tvNodata);
+
 		if (listImage == null) {
 			listImage = new ArrayList<SbbsMeImage>();
 		}
@@ -116,7 +116,9 @@ public class GalleryFragment extends BaseFragment implements
 		tvLoading.setText(R.string.loading);
 		tvLoading.setVisibility(View.VISIBLE);
 		setFragmentEnabled(false);
+		loader.setRefresh(false);
 		loader.startLoading();
+		SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_GALLERY, "");
 	}
 
 	@Override
@@ -152,6 +154,7 @@ public class GalleryFragment extends BaseFragment implements
 			tvLoading.setText(R.string.loading);
 			tvLoading.setVisibility(View.VISIBLE);
 			setFragmentEnabled(false);
+			loader.setRefresh(true);
 			loader.startLoading();
 			break;
 		}
@@ -221,17 +224,19 @@ public class GalleryFragment extends BaseFragment implements
 					} catch (IOException e) {
 
 					}
-					loader.startLoading();
 				} else {
 					setFragmentEnabled(true);
 					tvLoading.setVisibility(View.GONE);
 					Toast.makeText(getActivity(), R.string.upload_image_fail,
 							Toast.LENGTH_LONG).show();
 				}
+				loader.setRefresh(true);
+				loader.startLoading();
 			} else if (msg.what == 2) {
 				String ret = (String) msg.obj;
 				Log.e("hUpload", ret);
 				if (ret.equals("OK")) {
+					loader.setRefresh(true);
 					loader.startLoading();
 				} else {
 					setFragmentEnabled(true);
@@ -278,6 +283,8 @@ public class GalleryFragment extends BaseFragment implements
 
 			}
 		}).start();
+		SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_GALLERY_DELETE_PHOTO,
+				"");
 	}
 
 	private void doChoosePhoto() {
@@ -362,8 +369,15 @@ public class GalleryFragment extends BaseFragment implements
 		}
 		if (getActivity() != null) {
 			adapter.setNewList(listImage);
-			tvLoading.setVisibility(View.GONE);
-			setFragmentEnabled(true);
+			if (!((SbbsGalleryLoader) loader).isRefresh()) {
+				((SbbsGalleryLoader) loader).setRefresh(true);
+				loader.startLoading();
+			} else {
+				tvNodata.setVisibility(listImage.size() == 0 ? View.VISIBLE
+						: View.GONE);
+				tvLoading.setVisibility(View.GONE);
+				setFragmentEnabled(true);
+			}
 		}
 	}
 
