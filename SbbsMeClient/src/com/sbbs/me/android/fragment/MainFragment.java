@@ -17,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.TextView;
@@ -60,9 +61,11 @@ public class MainFragment extends BaseFragment implements
 	SbbsMeArticleAdapter adapter;
 	TextView tvLoading;
 	TextView tvNodata;
+	RelativeLayout layLogining;
 
 	MenuItem miUser;
 	MenuItem miGallery;
+	MenuItem miMessage;
 	SinaOAuth sinaOAuth;
 	GoogleOAuth googleOAuth;
 	GithubOAuth githubOAuth;
@@ -96,6 +99,7 @@ public class MainFragment extends BaseFragment implements
 		lvPullDown = (PullDownListView) innerView.findViewById(R.id.lvPullDown);
 		tvLoading = (TextView) innerView.findViewById(R.id.tvLoading);
 		tvNodata = (TextView) innerView.findViewById(R.id.tvNodata);
+		layLogining = (RelativeLayout) innerView.findViewById(R.id.layLogining);
 		if (Global.listArticle == null) {
 			Global.listArticle = new ArrayList<SbbsMeBlock>();
 		}
@@ -172,6 +176,10 @@ public class MainFragment extends BaseFragment implements
 		miGallery = menu.add(0, MenuIds.MENU_ID_GALLERY, 98, R.string.gallery);
 		miGallery.setIcon(android.R.drawable.ic_menu_gallery);
 		miGallery.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		miMessage = menu.add(0, MenuIds.MENU_ID_MESSAGE, 97, R.string.message);
+		miMessage.setIcon(MiscUtils.loadResIcon(getActivity(),
+				R.drawable.ic_menu_notifications));
+		miMessage.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 
 		if (SbbsMeAPI.isLogin()) {
 			Message msg = new Message();
@@ -182,6 +190,12 @@ public class MainFragment extends BaseFragment implements
 		}
 	}
 
+	private void setMenuLoginState(boolean login) {
+		if (miUser != null) {
+			miUser.setEnabled(!login);
+		}
+	}
+
 	private void loadUserInfo() {
 		int type = Config.getAccountType(getActivity());
 		switch (type) {
@@ -189,6 +203,8 @@ public class MainFragment extends BaseFragment implements
 			// google
 			String googleUserId = Config.getGoogleUserId(getActivity());
 			if (!googleUserId.equals("")) {
+				layLogining.setVisibility(View.VISIBLE);
+				setMenuLoginState(true);
 				googleOAuth.getGoogleUserInfoViaOAuth();
 			}
 			break;
@@ -196,12 +212,16 @@ public class MainFragment extends BaseFragment implements
 			// github
 			String githubUserId = Config.getGithubUserId(getActivity());
 			if (!githubUserId.equals("")) {
+				layLogining.setVisibility(View.VISIBLE);
+				setMenuLoginState(true);
 				githubOAuth.getGithubUserInfoViaOAuth();
 			}
 			break;
 		case 2:
 			String sinaUserId = Config.getSinaUserId(getActivity());
 			if (!sinaUserId.equals("")) {
+				layLogining.setVisibility(View.VISIBLE);
+				setMenuLoginState(true);
 				sinaOAuth.getSinaUserInfo(sinaUserId);
 			}
 			break;
@@ -243,6 +263,14 @@ public class MainFragment extends BaseFragment implements
 			if (SbbsMeAPI.isLogin()) {
 				startActivity(new Intent(getActivity(), GalleryActivity.class)
 						.putExtra("select_mode", false));
+			} else {
+				Toast.makeText(getActivity(), R.string.not_login,
+						Toast.LENGTH_LONG).show();
+			}
+			break;
+		case MenuIds.MENU_ID_MESSAGE:
+			if (SbbsMeAPI.isLogin()) {
+				// TODO: show messages
 			} else {
 				Toast.makeText(getActivity(), R.string.not_login,
 						Toast.LENGTH_LONG).show();
@@ -331,6 +359,8 @@ public class MainFragment extends BaseFragment implements
 		switch (requestCode) {
 		case 0: {
 			int type = data.getIntExtra("type", 0);
+			layLogining.setVisibility(View.VISIBLE);
+			setMenuLoginState(true);
 			switch (type) {
 			case 0:
 				googleOAuth.sendGoogleOauth();
@@ -351,7 +381,7 @@ public class MainFragment extends BaseFragment implements
 				Config.setAccountType(getActivity(), -1);
 				Config.setSinaUserId(getActivity(), "");
 				Config.setUserId(getActivity(), "");
-				miUser.setIcon(android.R.drawable.ic_menu_report_image);
+				miUser.setIcon(android.R.drawable.ic_menu_myplaces);
 				SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_LOGOUT, "");
 			}
 		}
@@ -380,6 +410,8 @@ public class MainFragment extends BaseFragment implements
 						miUser.setIcon(d);
 					}
 				}
+				layLogining.setVisibility(View.GONE);
+				setMenuLoginState(false);
 				SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_LOGIN, "");
 			}
 			super.handleMessage(msg);
