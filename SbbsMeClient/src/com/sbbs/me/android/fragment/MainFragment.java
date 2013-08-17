@@ -133,7 +133,7 @@ public class MainFragment extends BaseFragment implements
 	public void initLogic() {
 
 		page = 1;
-		isBottom = false;
+		setIsBottom(false);
 		if (Global.listArticle.size() == 0 || Global.autoRefreshTag) {
 			Global.autoRefreshTag = false;
 			tvLoading.setVisibility(View.VISIBLE);
@@ -159,6 +159,17 @@ public class MainFragment extends BaseFragment implements
 		SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_HOME, "");
 	}
 
+	private void setIsBottom(boolean bottom) {
+		isBottom = bottom;
+		if (isBottom) {
+			lvPullDown.enableAutoFetchMore(false, 0);
+			lvPullDown.showAutoFetchMore(false);
+		} else {
+			lvPullDown.enableAutoFetchMore(true, 1);
+			lvPullDown.showAutoFetchMore(true);
+		}
+	}
+
 	@Override
 	public int getFragmentLayoutResId() {
 		return R.layout.fragment_main;
@@ -172,15 +183,15 @@ public class MainFragment extends BaseFragment implements
 	@Override
 	public void initMenu(Menu menu) {
 		miUser = menu.add(0, MenuIds.MENU_ID_USER, 99, R.string.login);
-		miUser.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		miUser.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		miUser.setIcon(android.R.drawable.ic_menu_myplaces);
 		miGallery = menu.add(0, MenuIds.MENU_ID_GALLERY, 98, R.string.gallery);
 		miGallery.setIcon(android.R.drawable.ic_menu_gallery);
-		miGallery.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		miGallery.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
 		miMessage = menu.add(0, MenuIds.MENU_ID_MESSAGE, 97, R.string.message);
 		miMessage.setIcon(MiscUtils.loadResIcon(getActivity(),
 				R.drawable.ic_menu_notifications));
-		miMessage.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		miMessage.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
 
 		if (SbbsMeAPI.isLogin()) {
 			Message msg = new Message();
@@ -231,6 +242,7 @@ public class MainFragment extends BaseFragment implements
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
+		Global.canExit = false;
 		switch (item.getItemId()) {
 		case MenuIds.MENU_ID_USER:
 			int type = Config.getAccountType(getActivity());
@@ -294,8 +306,9 @@ public class MainFragment extends BaseFragment implements
 
 	@Override
 	public void onRefresh() {
+		Global.canExit = false;
 		page = 1;
-		isBottom = false;
+		setIsBottom(false);
 		loader.setRefresh(true);
 		loader.setPage(page, PAGE_SIZE);
 		loader.startLoading();
@@ -303,6 +316,7 @@ public class MainFragment extends BaseFragment implements
 
 	@Override
 	public void onMore() {
+		Global.canExit = false;
 		if (!isBottom) {
 			page++;
 			loader.setRefresh(true);
@@ -322,7 +336,7 @@ public class MainFragment extends BaseFragment implements
 		if (data != null && data.size() != 0) {
 			Global.listArticle.addAll(data);
 		} else {
-			isBottom = true;
+			setIsBottom(true);
 		}
 
 		if (getActivity() != null) {
@@ -345,6 +359,7 @@ public class MainFragment extends BaseFragment implements
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position,
 			long id) {
+		Global.canExit = false;
 		final SbbsMeBlock item = (SbbsMeBlock) lvPullDown.getListView()
 				.getItemAtPosition(position);
 
@@ -475,6 +490,7 @@ public class MainFragment extends BaseFragment implements
 
 	@Override
 	public void onClick(View v) {
+		Global.canExit = false;
 		switch (v.getId()) {
 		case R.id.tvNodata:
 			tvNodata.setEnabled(false);

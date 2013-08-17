@@ -5,10 +5,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.widget.Toast;
 
 import com.rarnu.devlib.base.BaseSlidingActivity;
 import com.rarnu.devlib.base.inner.InnerFragment;
 import com.rarnu.devlib.component.SlidingMenu;
+import com.rarnu.devlib.component.intf.OnCloseListener;
+import com.rarnu.devlib.component.intf.OnOpenListener;
 import com.rarnu.utils.ResourceUtils;
 import com.rarnu.utils.UIUtils;
 import com.sbbs.me.android.api.SbbsMeAPI;
@@ -21,7 +24,8 @@ import com.sbbs.me.android.fragment.PostNewFragment;
 import com.sbbs.me.android.fragment.RecentFragment;
 import com.sbbs.me.android.service.MessageService;
 
-public class MainActivity extends BaseSlidingActivity implements IMainIntf {
+public class MainActivity extends BaseSlidingActivity implements IMainIntf,
+		OnOpenListener, OnCloseListener {
 
 	int currentPage = 0;
 
@@ -30,8 +34,11 @@ public class MainActivity extends BaseSlidingActivity implements IMainIntf {
 		UIUtils.initDisplayMetrics(this, getWindowManager(), false);
 		ResourceUtils.init(this);
 		Global.autoRefreshTag = true;
+		Global.canExit = false;
 		super.onCreate(savedInstanceState);
 		startService(new Intent(this, MessageService.class));
+		getSlidingMenu().setOnOpenListener(this);
+		getSlidingMenu().setOnCloseListener(this);
 	}
 
 	@Override
@@ -91,17 +98,45 @@ public class MainActivity extends BaseSlidingActivity implements IMainIntf {
 		return new MainFragment();
 	}
 
+	boolean donotCloseTag = false;
+	boolean returnToHome = false;
+
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		if (currentPage != 0 && keyCode == KeyEvent.KEYCODE_BACK) {
-			switchPage(0, false);
+		if (currentPage != 0 && keyCode == KeyEvent.KEYCODE_BACK
+				&& (!getSlidingMenu().isMenuShowing())) {
+			donotCloseTag = true;
+			returnToHome = true;
+			showMenu();
 			return true;
 		}
 		return super.onKeyDown(keyCode, event);
 	}
 
 	@Override
+	public boolean onKeyUp(int keyCode, KeyEvent event) {
+		if (donotCloseTag && keyCode == KeyEvent.KEYCODE_BACK) {
+			donotCloseTag = false;
+			return true;
+		}
+		if (returnToHome) {
+			returnToHome = false;
+			switchPage(0, true);
+			return true;
+		}
+		if (Global.canExit) {
+			finish();
+		} else {
+			Global.canExit = true;
+			Toast.makeText(this, R.string.exit_hint, Toast.LENGTH_SHORT).show();
+			return true;
+		}
+		return super.onKeyUp(keyCode, event);
+	}
+
+	@Override
 	public void switchPage(int page, boolean needToggle) {
+		Global.canExit = false;
 		if (currentPage != page) {
 			currentPage = page;
 			Fragment f = getCurrentFragment(currentPage);
@@ -178,6 +213,18 @@ public class MainActivity extends BaseSlidingActivity implements IMainIntf {
 			break;
 		}
 		return f;
+	}
+
+	@Override
+	public void onClose() {
+		Global.canExit = false;
+
+	}
+
+	@Override
+	public void onOpen() {
+		Global.canExit = false;
+
 	}
 
 }
