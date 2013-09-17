@@ -9,9 +9,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 
+import com.sbbs.me.android.api.SbbsMeInboxUser;
 import com.sbbs.me.android.api.SbbsMePrivateMessage;
-import com.sbbs.me.android.api.SbbsMeUserLite;
 
 public class PrivateMessageUtils {
 
@@ -26,11 +27,11 @@ public class PrivateMessageUtils {
 				for (int i = 0; i < list.size(); i++) {
 					ContentValues cv = new ContentValues();
 					cv.put("id", list.get(i).Id);
+					Log.e("saveMessages", list.get(i).Id);
 					cv.put("from_user_id", list.get(i).FromUserId);
 					cv.put("from_user_name", list.get(i).FromUserName);
 					cv.put("to_user_id", list.get(i).ToUserId);
 					cv.put("to_user_name", list.get(i).ToUserName);
-					cv.put("format", list.get(i).Format);
 					cv.put("body", list.get(i).Body);
 					cv.put("created_on", list.get(i).Created_on);
 					cv.put("read", 0);
@@ -85,7 +86,6 @@ public class PrivateMessageUtils {
 						.getColumnIndex("from_user_name"));
 				msg.ToUserId = c.getString(c.getColumnIndex("to_user_id"));
 				msg.ToUserName = c.getString(c.getColumnIndex("to_user_name"));
-				msg.Format = c.getString(c.getColumnIndex("format"));
 				msg.Body = c.getString(c.getColumnIndex("body"));
 				msg.Created_on = c.getString(c.getColumnIndex("created_on"));
 				msg.read = (c.getInt(c.getColumnIndex("read")) == 1);
@@ -99,7 +99,7 @@ public class PrivateMessageUtils {
 		return list;
 	}
 
-	public static void setReadState(Context context, String id, boolean read) {
+	public static void setReadState(Context context, String userId, boolean read) {
 		ContentValues cv = new ContentValues();
 		cv.put("read", (read ? 1 : 0));
 		if (context != null) {
@@ -108,7 +108,7 @@ public class PrivateMessageUtils {
 						ContentUris.withAppendedId(
 								PrivateMessageProvider.CONTENT_URI,
 								PrivateMessageProvider.ACTION_MESSAGE), cv,
-						"id=?", new String[] { id });
+						"from_user_id=?", new String[] { userId });
 			} catch (Exception e) {
 
 			}
@@ -139,18 +139,28 @@ public class PrivateMessageUtils {
 		return id;
 	}
 
-	public static List<SbbsMeUserLite> getMessageUsers(
-			List<SbbsMePrivateMessage> list) {
-		List<SbbsMeUserLite> ret = new ArrayList<SbbsMeUserLite>();
-		if (list != null) {
-			for (int i = 0; i < list.size(); i++) {
-				SbbsMeUserLite user = new SbbsMeUserLite(list.get(i).ToUserId,
-						list.get(i).ToUserName);
-				if (ret.indexOf(user) == -1) {
-					ret.add(user);
+	public static List<Boolean> getNewMessageStatus(Context context,
+			List<SbbsMeInboxUser> list) {
+		List<Boolean> listRet = new ArrayList<Boolean>();
+		for (int i = 0; i < list.size(); i++) {
+			Cursor c = context.getContentResolver().query(
+					ContentUris.withAppendedId(
+							PrivateMessageProvider.CONTENT_URI,
+							PrivateMessageProvider.ACTION_QUERY_NEW), null,
+					"read=? and from_user_id=?",
+					new String[] { "0", list.get(i).UserId }, null);
+			boolean stat = false;
+			if (c != null) {
+				c.moveToFirst();
+				while (!c.isAfterLast()) {
+					stat = true;
+					c.moveToNext();
 				}
+				c.close();
 			}
+			listRet.add(stat);
 		}
-		return ret;
+		return listRet;
 	}
+
 }

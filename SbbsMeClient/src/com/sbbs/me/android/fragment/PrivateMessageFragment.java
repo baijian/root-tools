@@ -3,6 +3,7 @@ package com.sbbs.me.android.fragment;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.content.Intent;
 import android.content.Loader;
 import android.content.Loader.OnLoadCompleteListener;
 import android.os.Bundle;
@@ -18,24 +19,25 @@ import com.rarnu.devlib.component.PullDownListView;
 import com.rarnu.devlib.component.intf.OnPullDownListener;
 import com.rarnu.utils.ResourceUtils;
 import com.rarnu.utils.UIUtils;
-import com.sbbs.me.android.Global;
 import com.sbbs.me.android.R;
-import com.sbbs.me.android.adapter.SbbsMePrivateMessageAdapter;
+import com.sbbs.me.android.ViewMessageActivity;
+import com.sbbs.me.android.adapter.SbbsMePrivateUserAdapter;
 import com.sbbs.me.android.api.SbbsMeAPI;
-import com.sbbs.me.android.api.SbbsMeUserLite;
+import com.sbbs.me.android.api.SbbsMeInboxUser;
 import com.sbbs.me.android.database.PrivateMessageUtils;
-import com.sbbs.me.android.loader.SbbsPrivateMessageLoader;
+import com.sbbs.me.android.loader.SbbsPrivateUserLoader;
 
 public class PrivateMessageFragment extends BaseFragment implements
 		OnClickListener, OnPullDownListener, OnItemClickListener,
-		OnLoadCompleteListener<List<SbbsMeUserLite>> {
+		OnLoadCompleteListener<List<SbbsMeInboxUser>> {
 
 	PullDownListView lvPullDown;
 	TextView tvNodata;
 	TextView tvLoading;
-	SbbsPrivateMessageLoader loader;
-	SbbsMePrivateMessageAdapter adapter;
-	List<SbbsMeUserLite> list;
+	SbbsPrivateUserLoader loader;
+	SbbsMePrivateUserAdapter adapter;
+	List<SbbsMeInboxUser> list;
+	List<Boolean> listNewMessage;
 
 	public PrivateMessageFragment() {
 		super();
@@ -63,10 +65,12 @@ public class PrivateMessageFragment extends BaseFragment implements
 		tvNodata = (TextView) innerView.findViewById(R.id.tvNodata);
 		tvLoading = (TextView) innerView.findViewById(R.id.tvLoading);
 
-		list = new ArrayList<SbbsMeUserLite>();
-		adapter = new SbbsMePrivateMessageAdapter(getActivity(), list);
+		list = new ArrayList<SbbsMeInboxUser>();
+		listNewMessage = new ArrayList<Boolean>();
+		adapter = new SbbsMePrivateUserAdapter(getActivity(), list,
+				listNewMessage);
 		lvPullDown.getListView().setAdapter(adapter);
-		loader = new SbbsPrivateMessageLoader(getActivity());
+		loader = new SbbsPrivateUserLoader(getActivity());
 		lvPullDown.enableAutoFetchMore(false, 0);
 		lvPullDown.showAutoFetchMore(false);
 
@@ -76,7 +80,7 @@ public class PrivateMessageFragment extends BaseFragment implements
 		lvPullDown.getListView().setPadding(devide, devide, devide, devide);
 		lvPullDown.getListView().setSelector(R.color.transparent);
 		lvPullDown.getListView().setOverScrollMode(View.OVER_SCROLL_NEVER);
-
+		lvPullDown.getListView().setFocusableInTouchMode(false);
 	}
 
 	@Override
@@ -88,14 +92,19 @@ public class PrivateMessageFragment extends BaseFragment implements
 	}
 
 	@Override
+	public void onResume() {
+		super.onResume();
+		adapter.setNewMessage(PrivateMessageUtils.getNewMessageStatus(
+				getActivity(), list));
+	}
+
+	@Override
 	public void initLogic() {
 		lvPullDown.notifyDidLoad();
 		if (SbbsMeAPI.isLogin()) {
 			tvNodata.setText(R.string.no_data_refresh);
 			tvLoading.setText(R.string.loading);
 			tvLoading.setVisibility(View.VISIBLE);
-			loader.setQuery(
-					PrivateMessageUtils.getLastMessageId(getActivity()), 1, 100);
 			loader.setRefresh(false);
 			loader.startLoading();
 		} else {
@@ -134,8 +143,6 @@ public class PrivateMessageFragment extends BaseFragment implements
 	@Override
 	public void onRefresh() {
 		loader.setRefresh(true);
-		loader.setQuery(PrivateMessageUtils.getLastMessageId(getActivity()), 1,
-				100);
 		loader.startLoading();
 	}
 
@@ -146,33 +153,44 @@ public class PrivateMessageFragment extends BaseFragment implements
 
 	@Override
 	public void onClick(View v) {
-
-
+		tvLoading.setText(R.string.loading);
+		tvLoading.setVisibility(View.VISIBLE);
+		loader.setRefresh(false);
+		loader.startLoading();
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position,
 			long id) {
-
+		SbbsMeInboxUser user = list.get(position);
+		Intent inView = new Intent(getActivity(), ViewMessageActivity.class);
+		inView.putExtra("id", user.UserId);
+		inView.putExtra("name", user.Detail.Name);
+		inView.putExtra("avatar", user.Detail.AvatarURL);
+		startActivity(inView);
 	}
 
 	@Override
-	public void onLoadComplete(Loader<List<SbbsMeUserLite>> loader,
-			List<SbbsMeUserLite> data) {
-		list.clear();
+	public void onLoadComplete(Loader<List<SbbsMeInboxUser>> loader,
+			List<SbbsMeInboxUser> data) {
+
 		if (data != null) {
+			list.clear();
 			list.addAll(data);
 		}
 		if (getActivity() != null) {
 			adapter.setNewList(list);
+			adapter.setNewMessage(PrivateMessageUtils.getNewMessageStatus(
+					getActivity(), list));
+			lvPullDown.getListView().setSelected(false);
 			lvPullDown.notifyDidRefresh();
 			lvPullDown.notifyDidMore();
-			if (!((SbbsPrivateMessageLoader) loader).isRefresh()) {
-				((SbbsPrivateMessageLoader) loader).setRefresh(true);
+			if (!((SbbsPrivateUserLoader) loader).isRefresh()) {
+				((SbbsPrivateUserLoader) loader).setRefresh(true);
 				loader.startLoading();
 			} else {
 				tvNodata.setEnabled(true);
-				tvNodata.setVisibility(Global.listArticle.size() == 0 ? View.VISIBLE
+				tvNodata.setVisibility(list.size() == 0 ? View.VISIBLE
 						: View.GONE);
 				tvLoading.setVisibility(View.GONE);
 			}

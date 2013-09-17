@@ -7,12 +7,11 @@ import android.content.Context;
 import com.rarnu.devlib.base.BaseLoader;
 import com.sbbs.me.android.api.SbbsMeAPI;
 import com.sbbs.me.android.api.SbbsMePrivateMessage;
-import com.sbbs.me.android.api.SbbsMeUserLite;
 import com.sbbs.me.android.database.PrivateMessageUtils;
 
-public class SbbsPrivateMessageLoader extends BaseLoader<SbbsMeUserLite> {
+public class SbbsPrivateMessageLoader extends BaseLoader<SbbsMePrivateMessage> {
 
-	private String lastMsgId;
+	private String userId;
 	private int page;
 	private int pageSize;
 	private boolean refresh = false;
@@ -21,34 +20,36 @@ public class SbbsPrivateMessageLoader extends BaseLoader<SbbsMeUserLite> {
 		super(context);
 	}
 
-	public void setQuery(String lastMsgId, int page, int pageSize) {
-		this.lastMsgId = lastMsgId;
+	public void setQuery(String userId, int page, int pageSize) {
+		this.userId = userId;
 		this.page = page;
 		this.pageSize = pageSize;
 	}
 
 	@Override
-	public List<SbbsMeUserLite> loadInBackground() {
+	public List<SbbsMePrivateMessage> loadInBackground() {
+
 		List<SbbsMePrivateMessage> list = null;
 		if (refresh) {
-			list = SbbsMeAPI.queryMessage(lastMsgId, page, pageSize);
+			list = SbbsMeAPI.getPrivateMessage(userId, page, pageSize);
 			if (list != null && list.size() != 0) {
 				PrivateMessageUtils.saveMessages(getContext(), list);
+			} else {
+				if (page == 1) {
+					list = PrivateMessageUtils.queryMessages(getContext(), userId);
+				}
 			}
 		} else {
-			list = PrivateMessageUtils.queryMessages(getContext());
+			list = PrivateMessageUtils.queryMessages(getContext(), userId);
 			if (list == null || list.size() == 0) {
-				list = SbbsMeAPI.queryMessage(lastMsgId, page, pageSize);
+				refresh = true;
+				list = SbbsMeAPI.getPrivateMessage(userId, page, pageSize);
 				if (list != null && list.size() != 0) {
 					PrivateMessageUtils.saveMessages(getContext(), list);
 				}
 			}
 		}
-		List<SbbsMeUserLite> listUser = null;
-		if (list != null) {
-			listUser = PrivateMessageUtils.getMessageUsers(list);
-		}
-		return listUser;
+		return list;
 	}
 
 	public boolean isRefresh() {

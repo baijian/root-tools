@@ -17,10 +17,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.rarnu.devlib.base.BaseFragment;
 import com.rarnu.devlib.component.PullDownListView;
@@ -115,6 +115,7 @@ public class MainFragment extends BaseFragment implements
 		lvPullDown.getListView().setPadding(devide, devide, devide, devide);
 		lvPullDown.getListView().setSelector(R.color.transparent);
 		lvPullDown.getListView().setOverScrollMode(View.OVER_SCROLL_NEVER);
+		lvPullDown.getListView().setFocusableInTouchMode(false);
 
 		sinaOAuth = new SinaOAuth(getActivity(), this);
 		googleOAuth = new GoogleOAuth(getActivity(), this);
@@ -153,7 +154,9 @@ public class MainFragment extends BaseFragment implements
 		}
 		lvPullDown.notifyDidLoad();
 		if (!SbbsMeAPI.isLogin()) {
-			loadUserInfo();
+			if (!Config.getUserId(getActivity()).equals("")) {
+				doAutoLoginT();
+			}
 		}
 
 		SbbsMeAPI.writeLogT(getActivity(), SbbsMeLogs.LOG_HOME, "");
@@ -208,36 +211,44 @@ public class MainFragment extends BaseFragment implements
 		}
 	}
 
-	private void loadUserInfo() {
-		int type = Config.getAccountType(getActivity());
-		switch (type) {
-		case 0:
-			// google
-			String googleUserId = Config.getGoogleUserId(getActivity());
-			if (!googleUserId.equals("")) {
-				layLogining.setVisibility(View.VISIBLE);
-				setMenuLoginState(true);
-				googleOAuth.getGoogleUserInfoViaOAuth();
+	private void doAutoLoginT() {
+		layLogining.setVisibility(View.VISIBLE);
+		setMenuLoginState(true);
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				Message msg = new Message();
+				msg.what = 1;
+				String accType = Config.getAccountString(getActivity());
+				String local = "my" + accType + "head.jpg";
+				if (!SbbsMeAPI.isLogin()) {
+					try {
+						String uid = Config.getUserId(getActivity());
+						if (!uid.equals("")) {
+
+							SbbsMeAPI.login(uid,
+									Config.getUserName(getActivity()), accType,
+									Config.getAvatarUrl(getActivity()));
+
+							if (SbbsMeAPI.isLogin()) {
+								msg.obj = MiscUtils.getUserHead(getActivity(),
+										Config.getAvatarUrl(getActivity()),
+										local);
+							}
+						}
+
+					} catch (Exception e) {
+
+					}
+				} else {
+					msg.obj = MiscUtils.getUserHead(getActivity(),
+							Config.getAvatarUrl(getActivity()), local);
+				}
+				hSetHead.sendMessage(msg);
 			}
-			break;
-		case 1:
-			// github
-			String githubUserId = Config.getGithubUserId(getActivity());
-			if (!githubUserId.equals("")) {
-				layLogining.setVisibility(View.VISIBLE);
-				setMenuLoginState(true);
-				githubOAuth.getGithubUserInfoViaOAuth();
-			}
-			break;
-		case 2:
-			String sinaUserId = Config.getSinaUserId(getActivity());
-			if (!sinaUserId.equals("")) {
-				layLogining.setVisibility(View.VISIBLE);
-				setMenuLoginState(true);
-				sinaOAuth.getSinaUserInfo(sinaUserId);
-			}
-			break;
-		}
+		}).start();
 	}
 
 	@Override
@@ -341,6 +352,7 @@ public class MainFragment extends BaseFragment implements
 
 		if (getActivity() != null) {
 			adapter.setNewList(Global.listArticle);
+			lvPullDown.getListView().setSelected(false);
 			lvPullDown.notifyDidRefresh();
 			lvPullDown.notifyDidMore();
 

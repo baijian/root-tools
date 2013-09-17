@@ -11,8 +11,10 @@ import com.rarnu.tools.root.fragment.CompFragment;
 import com.rarnu.tools.root.fragment.CompPackageInfoFragment;
 import com.rarnu.tools.root.fragment.CustomCleanManagerFragment;
 import com.rarnu.tools.root.fragment.DataappReportFragment;
+import com.rarnu.tools.root.fragment.DiskInfoFragment;
 import com.rarnu.tools.root.fragment.EnableappFragment;
 import com.rarnu.tools.root.fragment.FeedbackFragment;
+import com.rarnu.tools.root.fragment.FileSystemFragment;
 import com.rarnu.tools.root.fragment.HardUpdateFragment;
 import com.rarnu.tools.root.fragment.HostAddFragment;
 import com.rarnu.tools.root.fragment.HostDeprecatedFragment;
@@ -60,6 +62,8 @@ public class Fragments {
 	private static CustomCleanManagerFragment fCustomClean = null;
 	private static TerminalFragment fTerminal = null;
 	private static HardUpdateFragment fHardUpdate = null;
+	private static DiskInfoFragment fDiskInfo = null;
+	private static FileSystemFragment fFileSystem = null;
 
 	public static Fragment getFragment(String name) {
 		Fragment f = null;
@@ -198,12 +202,18 @@ public class Fragments {
 				fHardUpdate = new HardUpdateFragment();
 			}
 			f = fHardUpdate;
+		} else if (name.equals(FragmentNameConst.FN_DISKINFO)) {
+			if (fDiskInfo == null) {
+				fDiskInfo = new DiskInfoFragment();
+			}
+			f = fDiskInfo;
+		} else if (name.equals(FragmentNameConst.FN_FILESYSTEM)) {
+			if (fFileSystem == null) {
+				fFileSystem = new FileSystemFragment();
+			}
+			f = fFileSystem;
 		}
 		return f;
-	}
-
-	public static void loadFragments() {
-
 	}
 
 	public static void releaseFragments() {
@@ -233,5 +243,7 @@ public class Fragments {
 		fCustomClean = null;
 		fTerminal = null;
 		fHardUpdate = null;
+		fDiskInfo = null;
+		fFileSystem = null;
 	}
 }
