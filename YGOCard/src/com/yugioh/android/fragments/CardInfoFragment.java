@@ -9,11 +9,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ShareActionProvider;
 import com.rarnu.devlib.base.BaseTabFragment;
+import com.rarnu.utils.ImageUtils;
+import com.rarnu.utils.ResourceUtils;
 import com.yugioh.android.R;
 import com.yugioh.android.classes.CardInfo;
 import com.yugioh.android.common.MenuIds;
+import com.yugioh.android.database.FavUtils;
 import com.yugioh.android.define.PathDefine;
-import com.yugioh.android.utils.ResourceUtils;
 
 import java.io.File;
 import java.util.List;
@@ -21,6 +23,8 @@ import java.util.List;
 public class CardInfoFragment extends BaseTabFragment {
 
     MenuItem itemShare;
+    MenuItem itemFav;
+    CardInfo info = null;
 
     public CardInfoFragment() {
         super();
@@ -28,13 +32,10 @@ public class CardInfoFragment extends BaseTabFragment {
         tabTitle = "";
     }
 
-    CardInfo info = null;
-
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        info = (CardInfo) getActivity().getIntent().getSerializableExtra(
-                "cardinfo");
+        info = (CardInfo) getActivity().getIntent().getSerializableExtra("cardinfo");
     }
 
     @Override
@@ -61,13 +62,32 @@ public class CardInfoFragment extends BaseTabFragment {
         sap.setShareIntent(getShareIntent());
         itemShare.setActionProvider(sap);
 
+        itemFav = menu.add(0, MenuIds.MENUID_FAV, 98, R.string.fav);
+        itemFav.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        itemFav.setIcon(ImageUtils.loadActionBarIcon(getActivity(), FavUtils.queryFav(getActivity(), info.getCardID()) ? R.drawable.fav_enabled : R.drawable.fav_disabled));
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case MenuIds.MENUID_FAV:
+                boolean isFav = FavUtils.queryFav(getActivity(), info.getCardID());
+                if (isFav) {
+                    FavUtils.removeFav(getActivity(), info.getCardID());
+                    itemFav.setIcon(ImageUtils.loadActionBarIcon(getActivity(), R.drawable.fav_disabled));
+                } else {
+                    FavUtils.addFav(getActivity(), info.getCardID());
+                    itemFav.setIcon(ImageUtils.loadActionBarIcon(getActivity(), R.drawable.fav_enabled));
+                }
+                break;
+        }
+        return true;
     }
 
     private Intent getShareIntent() {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("image/*");
-        Uri uri = Uri.fromFile(new File(PathDefine.PICTURE_PATH
-                + String.valueOf(info.getCardID() - 1) + ".jpg"));
+        Uri uri = Uri.fromFile(new File(PathDefine.PICTURE_PATH + String.valueOf(info.getCardID() - 1) + ".jpg"));
         shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
         shareIntent.putExtra(Intent.EXTRA_TEXT, "Share one cadrd");
         return shareIntent;
