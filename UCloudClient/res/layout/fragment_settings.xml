@@ -90,14 +90,6 @@
                       android:gravity="left|center_vertical"
                       android:text="@string/settings_service_ringtone"
                       android:layout_marginLeft="48dip"/>
-            <Button android:id="@+id/btnServiceRingtone"
-                    android:layout_width="96dip"
-                    android:layout_height="48dip"
-                    android:layout_below="@+id/chkServiceReceived"
-                    android:layout_alignParentRight="true"
-                    android:background="@drawable/button_style"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:text="@string/settings_service_ringtone_system"/>
 
             <CheckBox android:id="@+id/chkServiceVibrate"
                       android:layout_width="wrap_content"
@@ -115,6 +107,41 @@
                       android:gravity="left|center_vertical"
                       android:text="@string/settings_service_led"
                       android:layout_marginLeft="48dip"/>
+
+            <TextView android:id="@+id/tvAccountTitle"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:padding="4dip"
+                      android:layout_marginTop="4dip"
+                      android:layout_below="@+id/chkServiceLED"
+                      android:text="@string/settings_account"
+                      android:background="@android:color/holo_blue_light"
+                      android:textColor="?android:attr/textColorPrimary"/>
+            <TextView android:id="@+id/tvUserName"
+                      android:layout_width="wrap_content"
+                      android:layout_height="48dip"
+                      android:layout_below="@+id/tvAccountTitle"
+                      android:gravity="left|center_vertical"
+                      android:textColor="?android:attr/textColorPrimary"
+                      android:text="@string/settings_user_name"
+                      android:paddingLeft="8dip"/>
+            <Button android:id="@+id/btnLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dip"
+                    android:layout_marginLeft="16dip"
+                    android:gravity="center"
+                    android:layout_toRightOf="@+id/tvUserName"
+                    android:layout_toLeftOf="@+id/btnAccountInfo"
+                    android:layout_below="@+id/tvAccountTitle"
+                    android:background="@drawable/button_style"
+                    android:text="@string/settings_user_login"/>
+            <Button android:id="@+id/btnAccountInfo"
+                    android:layout_width="96dip"
+                    android:layout_height="48dip"
+                    android:layout_below="@+id/tvAccountTitle"
+                    android:background="@drawable/button_style"
+                    android:text="@string/settings_account_info"
+                    android:layout_alignParentRight="true"/>
         </RelativeLayout>
     </ScrollView>
 

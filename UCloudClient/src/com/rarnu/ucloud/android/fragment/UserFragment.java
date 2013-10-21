@@ -6,22 +6,21 @@ import com.rarnu.devlib.base.BaseFragment;
 import com.rarnu.ucloud.android.R;
 import com.rarnu.utils.ResourceUtils;
 
-public class ServiceFragment extends BaseFragment {
+public class UserFragment extends BaseFragment{
 
-    public ServiceFragment() {
+    public UserFragment() {
         super();
-        tagText = ResourceUtils.getString(R.string.tag_service_fragment);
-        tabTitle = ResourceUtils.getString(R.string.title_service_fragment);
+        tagText = ResourceUtils.getString(R.string.user_title);
     }
 
     @Override
     public int getBarTitle() {
-        return 0;
+        return R.string.user_title;
     }
 
     @Override
     public int getBarTitleWithPath() {
-        return 0;
+        return R.string.user_title;
     }
 
     @Override
@@ -43,7 +42,7 @@ public class ServiceFragment extends BaseFragment {
 
     @Override
     public int getFragmentLayoutResId() {
-        return R.layout.fragment_service;
+        return R.layout.fragment_user;
     }
 
     @Override
