@@ -1,17 +1,49 @@
+#
+*.log
+*.swp
+*.ini
+*.cfg
+tmp/
+.idea/
+
+# java
 .classpath
 bin/
 gen/
-.settings/
+
+# android
 *.apk
-x86_64-linux/
-i386-linux/
 *.so
 obj/
 local.properties
-*.log
-*.swp
 build.xml
 lint.xml
-.idea/
-convert2
+
+# lazarus
+x86_64-linux/
+i386-linux/
+i386-win32/
+i386-darwin/
+core
+*.~p*
+*.o
+*.ppu
+backup/
+
+# jetbrains
 out/
+.idea/workspace.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/inspectionProfiles/
+.idea/codeStyleSettings.xml
+
+# xcode
+.DS_*
+
+ 
+# project
+RootTools2/build/
+Emulator/build/
+RootTools2/.gradle/
+Emulator/.gradle/
