@@ -57,6 +57,8 @@
     <string name="view_profile_note">组件配置是众人的经验所成, 经过实际体验得到的最佳组件配置, 它包含了该应用可被禁用且不影响主要功能的组件列表。下载组件配置后即可直接完成组件禁用, 若当前应用没有配置方案, 或者您觉得当前方案不佳, 也可以上传您当前对于组件的配置。</string>
 
     <string name="view_ready">已准备就绪, 请点击右上角『清理』按钮开始清理...\n</string>
+    <string name="view_not_ready">正在准备环境, 请稍候...\n</string>
+    <string name="view_env_error">准备环境失败, 不能进行清理操作...\n</string>
     <string name="view_start_clean">开始清理, 请耐心等待...\n</string>
     <string name="view_clean_cache" formatted="false">清理: %s (%s) ...\n</string>
     <string name="view_clean_anr" formatted="false">清理 ANR 日志 (%s) ...\n</string>
@@ -64,7 +66,6 @@
     <string name="view_clean_complete" formatted="false">清理完毕, 共清理文件 %s\n\n</string>
 
     <string name="view_about_version" formatted="false">version %s</string>
-    <string name="view_about_intro"></string>
     <string name="view_about_project_github">项目源码 rarnu/root-tools</string>
     <string name="view_about_project_github_url">https://github.com/rarnu/root-tools</string>
     <string name="view_about_thankto">特别鸣谢</string>
@@ -73,13 +74,14 @@
     <string name="view_about_thankto_coderstory_github">参考项目(GPLv2) coderstory/toolkit</string>
     <string name="view_about_thankto_coderstory_github_url">https://github.com/coderstory/toolkit</string>
 
-    <string name="view_gpl_license_url">https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html</string>
+    <string name="view_gpl_license_url">http://diy.ourocg.cn/root/help.php</string>
 
     <string name="ab_search">搜索</string>
     <string name="ab_save">保存</string>
     <string name="ab_clean">清理</string>
     <string name="ab_update">检查升级</string>
     <string name="ab_share">分享</string>
+    <string name="ab_help">使用帮助</string>
     <string name="ab_onekey">一键设置</string>
     <string name="ab_send_ctrl">发送 Ctrl</string>
     <string name="ab_send_fn">发送 FN</string>
@@ -109,5 +111,6 @@
     <string name="alert_no_component_config">该应用程序还没有组件配置, 您可以配置后上传自己的方案!</string>
     <string name="alert_upload_ok">上传组件配置成功, 待审核通过后即可让他人下载!</string>
     <string name="alert_upload_failed">上传组件配置失败, 请确认设置正确并检查网络!</string>
+    <string name="alert_androidn_pending">检测到 Android N, 由于安全策略的问题, 暂时还无法很好的支持, 若使用过程中出现问题请至 Github 提交 Issue, 但是修复时间无法确定。</string>
 
 </resources>
